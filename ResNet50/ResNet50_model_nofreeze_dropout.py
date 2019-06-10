@@ -16,7 +16,7 @@ from tensorflow.keras.optimizers import RMSprop, Adam, SGD
 from tensorflow.keras.models import Sequential, Model, load_model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint
-from tensorflow.keras.applications.vgg16 import preprocess_input 
+from tensorflow.keras.applications.vgg16 import preprocess_input
 from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
 
@@ -27,6 +27,7 @@ batch_size = 64
 epochs = 100
 optimizer_choice = Adam
 learning_rate = 0.0001
+drop_rate = 0.5
 
 
 # define f1 score
@@ -42,6 +43,8 @@ def recall(y_true, y_pred):
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     return true_positives / (possible_positives + K.epsilon())
 
+
+
 def precision(y_true, y_pred):
     """Precision metric.
 
@@ -54,10 +57,12 @@ def precision(y_true, y_pred):
     predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
     return true_positives / (predicted_positives + K.epsilon())
 
+
 def f1(y_true, y_pred): 
     precision_value = precision(y_true, y_pred)
     recall_value = recall(y_true, y_pred)
     return 2*((precision_value * recall_value)/(precision_value + recall_value + K.epsilon()))
+
 
 train_datagen = ImageDataGenerator(
         shear_range=0.2,
@@ -85,23 +90,27 @@ dev_generator = test_datagen.flow_from_directory(
 
 initial_model = ResNet50(include_top=False, weights='imagenet', input_shape=(224,224,3))
 
+
 # Create the model
 model = Sequential()
 model.add(initial_model)
 model.add(MaxPooling2D(7))
 model.add(Flatten())
+model.add(Dropout(rate = drop_rate))
 model.add(Dense(64))
 model.add(BatchNormalization())
 model.add(Dense(1))
 model.add(Activation('sigmoid'))
 
+
 my_optimizer = optimizer_choice(lr=learning_rate)
 model.compile(optimizer=my_optimizer, loss='binary_crossentropy', metrics=['accuracy', f1, precision, recall])
 
-csv_logger = CSVLogger('ResNet50_results_nofreeze_1.csv', append=False, separator=';')
 
-filepath="model_resnet50_new_weights/Resnet50_new_weights_1-{epoch:02d}-{val_loss:.2f}.hdf5"
-checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
+csv_logger = CSVLogger('ResNet50_results_nofreeze_5drop.csv', append=False, separator=';')
+
+filepath="model_resnet50_new_5dropout_weights/Resnet50_new_weights_5drop-{epoch:02d}-{val_acc:.2f}.hdf5"
+checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 
 
 model.fit_generator(
@@ -113,5 +122,4 @@ model.fit_generator(
         validation_steps=dev_generator.samples//dev_generator.batch_size, 
         verbose=1)
 
-model.save('ResNet_new_nodropout_weight.h5')
-
+model.save('ResNet_new_5dropout_weight.h5')
