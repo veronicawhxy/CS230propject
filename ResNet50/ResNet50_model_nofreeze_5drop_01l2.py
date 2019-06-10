@@ -36,6 +36,7 @@ from tensorflow.keras.applications.resnet50 import preprocess_input, decode_pred
 target_side_len = 224
 batch_size = 64
 epochs = 100
+l2_rate = 0.01
 optimizer_choice = Adam
 learning_rate = 0.0001
 drop_rate = 0.5
@@ -158,8 +159,8 @@ model.add(Flatten())
 # In[13]:
 
 model.add(Dropout(rate = drop_rate))
-model.add(Dense(64,kernel_regularizer=l2(0.01),
-                activity_regularizer=l1(0.01)))
+model.add(Dense(64,kernel_regularizer=l2(l2_rate),
+                activity_regularizer=l1(l2_rate)))
 
 model.add(BatchNormalization())
 # model.add(Activation('relu'))
