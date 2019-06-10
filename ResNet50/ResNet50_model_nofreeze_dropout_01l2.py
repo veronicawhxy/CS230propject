@@ -28,6 +28,7 @@ epochs = 100
 optimizer_choice = Adam
 learning_rate = 0.0001
 drop_rate = 0.5
+l2_rate = 0.01
 
 # define f1 score
 def recall(y_true, y_pred):
@@ -95,8 +96,8 @@ model.add(initial_model)
 model.add(MaxPooling2D(7))
 model.add(Flatten())
 model.add(Dropout(rate = drop_rate))
-model.add(Dense(64,kernel_regularizer=l2(0.01),
-                activity_regularizer=l1(0.01)))
+model.add(Dense(64,kernel_regularizer=l2(l2_rate),
+                activity_regularizer=l1(l2_rate)))
 model.add(BatchNormalization())
 model.add(Dense(1))
 model.add(Activation('sigmoid'))
